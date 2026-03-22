@@ -73,6 +73,13 @@ echo "🤖 Creating window 'bridge' → Python bridge"
 tmux new-window -t "${SESSION}:" -n "bridge" \
   "cd '$SCRIPT_DIR' && TMUX_TARGET='${SESSION}:code' uv run tg_bridge.py; exec bash"
 
+# ─── Notify Telegram ─────────────────────────────────────────────────────────
+
+curl -s -o /dev/null -X POST \
+  "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+  -d chat_id="${TELEGRAM_CHAT_ID}" \
+  -d text="🚀 Claude opened in: ${PROJECT_DIR}"
+
 # ─── Attach to Claude window ─────────────────────────────────────────────────
 
 echo ""
@@ -81,4 +88,13 @@ echo "   Claude Code : tmux attach -t ${SESSION}:code"
 echo "   Bridge logs : tmux select-window -t ${SESSION}:bridge"
 echo ""
 echo "Connecting to session..."
+
+# Kill the tmux session when the terminal is closed or user detaches.
+# HUP is sent when the terminal emulator window is closed.
+cleanup() {
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+}
+trap cleanup EXIT
+trap 'exit 0' HUP INT TERM
+
 tmux attach -t "${SESSION}:code"

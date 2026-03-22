@@ -11,8 +11,11 @@
 import asyncio
 import logging
 import os
+import signal
 import subprocess
 import sys
+import threading
+import time
 
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
@@ -38,6 +41,31 @@ if not BOT_TOKEN:
     sys.exit("❌  TELEGRAM_BOT_TOKEN is not set")
 if CHAT_ID == 0:
     sys.exit("❌  TELEGRAM_CHAT_ID is not set")
+
+
+# ─── Watchdog ─────────────────────────────────────────────────────────────
+
+WATCHDOG_INTERVAL = 15  # seconds
+
+def _tmux_watchdog() -> None:
+    """Background thread: stop the bot when no clients are attached to the tmux session."""
+    session = TMUX_TARGET.split(":")[0]
+    while True:
+        time.sleep(WATCHDOG_INTERVAL)
+        try:
+            result = subprocess.run(
+                ["tmux", "list-clients", "-t", session],
+                capture_output=True, text=True,
+            )
+            # Session gone (non-zero exit) or no clients attached (empty output)
+            if result.returncode != 0 or not result.stdout.strip():
+                log.warning("[FIX] No clients attached to '%s' — stopping bridge", session)
+                os.kill(os.getpid(), signal.SIGINT)
+                return
+        except FileNotFoundError:
+            log.warning("[FIX] tmux not found — stopping bridge")
+            os.kill(os.getpid(), signal.SIGINT)
+            return
 
 
 # ─── Handler ──────────────────────────────────────────────────────────────────
@@ -82,6 +110,11 @@ def main() -> None:
     log.info("   tmux target : %s", TMUX_TARGET)
     log.info("   chat_id     : %s", CHAT_ID)
     log.info("   Only one bridge should be active at a time")
+
+    # Start watchdog: shuts down the bot if the tmux session disappears
+    watchdog = threading.Thread(target=_tmux_watchdog, daemon=True)
+    watchdog.start()
+    log.info("[FIX] tmux watchdog started (checks every %ds)", WATCHDOG_INTERVAL)
 
     app = (
         Application.builder()
