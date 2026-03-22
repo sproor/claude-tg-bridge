@@ -18,6 +18,10 @@ mkdir -p "$INSTALL_DIR"
 cp "$SOURCE_DIR/start.sh"            "$INSTALL_DIR/start.sh"
 cp "$SOURCE_DIR/tg_bridge.py"        "$INSTALL_DIR/tg_bridge.py"
 cp "$SOURCE_DIR/send-to-telegram.sh" "$INSTALL_DIR/send-to-telegram.sh"
+if [[ -f "$SOURCE_DIR/.env" ]]; then
+  cp "$SOURCE_DIR/.env" "$INSTALL_DIR/.env"
+  echo "  .env copied"
+fi
 chmod +x "$INSTALL_DIR/start.sh"
 chmod +x "$INSTALL_DIR/send-to-telegram.sh"
 

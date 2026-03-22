@@ -21,7 +21,7 @@ from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
 BOT_TOKEN   = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID     = int(os.environ.get("TELEGRAM_CHAT_ID", "0"))
-TMUX_TARGET = os.environ.get("TMUX_TARGET", "claude:0")   # session:window.pane
+TMUX_TARGET = os.environ.get("TMUX_TARGET", "claude:code")   # session:window.pane
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 
@@ -78,9 +78,10 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    log.info("🤖 Telegram→Claude bridge started")
+    log.info("[FIX] 🤖 Telegram→Claude bridge started (single-instance)")
     log.info("   tmux target : %s", TMUX_TARGET)
     log.info("   chat_id     : %s", CHAT_ID)
+    log.info("   Only one bridge should be active at a time")
 
     app = (
         Application.builder()
