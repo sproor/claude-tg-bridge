@@ -1,0 +1,21 @@
+# Environment
+.env
+
+# AI tooling
+.ai-factory/
+.ai-factory.json
+skills-lock.json
+.claude/
+.mcp.json
+AGENTS.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
